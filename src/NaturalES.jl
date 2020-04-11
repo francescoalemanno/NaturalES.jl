@@ -36,5 +36,5 @@ function optimize(f,x0::AbstractArray{T},σ,lr) where T
     end
     (sol=x,cost=f(x))
 end
-
+export optimize
 end # module
