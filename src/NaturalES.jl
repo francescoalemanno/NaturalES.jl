@@ -1,27 +1,25 @@
 module NaturalES
+trandn(v::NTuple{N,T}) where {N,T} = ntuple(i->randn(T),Val(N))
 
-using Random
-
-function optimize(f,x0::AbstractArray{T},σ,lr) where T
-    N=length(x0)
-    ϵ=copy(x0)
-    ∇f=copy(x0)
-    x=copy(x0)
-    Z=zero(T)
+function optimize(f,x0::NTuple{N,T},σ::T,lr::T) where {T,N}
+    x=x0
+    Zv=zero.(x0)
     samples=3N
     MAXWASTEEVAL=500
     improv=MAXWASTEEVAL
-    bestavgF=typemax(T)
+    bestavgF=10f(x0)
+    Z=zero(bestavgF)
     iσ=inv.(σ)
     while improv > 0
         avgF=Z
+        ∇f=Zv
         for i in 1:samples
-            randn!(ϵ)
+            ϵ=trandn(x0)
             Fa = f(x .+ σ .* ϵ)
             Fb = f(x .- σ .* ϵ)
             avgF += (Fa + Fb) / 2
             δ = (Fa - Fb) / 2
-            ∇f .+= δ .* ϵ .* iσ
+            ∇f = ∇f .+ δ .* ϵ .* iσ
         end
         avgF /= samples
         if avgF < bestavgF
@@ -30,11 +28,15 @@ function optimize(f,x0::AbstractArray{T},σ,lr) where T
         else
             improv -= 1
         end
-        ∇f ./= samples
-        x .-= lr .* ∇f
-        ∇f .= 0
+        ∇f = ∇f ./ samples
+        x = x .- lr .* ∇f
     end
     (sol=x,cost=f(x))
+end
+function optimize(f,x0::T,σ::T,lr::T) where T
+    @inline g(x)=f(x[1])
+    r=optimize(g,(x0,),σ,lr)
+    (sol=r.sol[1],cost=r.cost)
 end
 export optimize
 end # module
