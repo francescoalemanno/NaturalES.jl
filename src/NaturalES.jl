@@ -1,5 +1,7 @@
 module NaturalES
+
 using Random
+
 function optimize(f,x0::AbstractArray{T},σ,lr) where T
     N=length(x0)
     ϵ=copy(x0)
@@ -34,4 +36,5 @@ function optimize(f,x0::AbstractArray{T},σ,lr) where T
     end
     (sol=x,cost=f(x))
 end
+
 end # module
