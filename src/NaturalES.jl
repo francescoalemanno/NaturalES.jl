@@ -1,5 +1,7 @@
 module NaturalES
 using Random
+using LinearAlgebra
+
 trandn(rn::AbstractRNG, v::NTuple{N,T}) where {N,T} = ntuple(i->randn(rn,T),Val(N))
 function tsqnorm(v::NTuple{N,T}) where {N,T}
     s=zero(T)
@@ -65,13 +67,6 @@ function separable_nes(f,x0::NTuple{N,T},
     separable_nes(f,x0,vσ,lr_x,lr_σ)
 end
 
-
-
-
-
-using LinearAlgebra
-
-using Random
 function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
     d=length(μ)
     n=4+floor(Int,3*log(d))
@@ -99,6 +94,15 @@ function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
         B=B*exp(ηB/2 .* GB)
     end
     return (sol=μ, cost=f(μ))
+end
+
+function xnes(f,μ::AbstractVector{T},σ::AbstractVector{T}) where T
+    A=diagm(σ)
+    xnes(f,μ,A)
+end
+
+function xnes(f,μ::AbstractVector{T},σ::T=one(T)) where T
+    xnes(f,μ,fill(σ,length(μ)))
 end
 
 export separable_nes,xnes
