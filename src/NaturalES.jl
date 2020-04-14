@@ -84,8 +84,8 @@ function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
     Gδ=zeros(T,d)
     GM=zeros(T,d,d)
     GB=zeros(T,d,d)
-    Id=I(d)
-    while σ>1e-5
+    Id=one(T)*I(d)
+    while σ>1e-8d
         for i in 1:n
             randn!(Z[i])
             F[i]=f(μ .+ σ.*B*Z[i])
@@ -100,10 +100,10 @@ function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
             end
         end
         Gσ=tr(GM)/d
-        GM .-= Gσ
+        GM .-= Gσ*Id
         μ.+=ημ*σ*B*Gδ
         σ=σ*exp(ησ/2*Gσ)
-        B.*=exp(ηB/2 .* GM)
+        B.=B*exp(ηB/2 .* GM)
     end
     return (sol=μ, cost=f(μ))
 end
