@@ -1,7 +1,7 @@
 module NaturalES
 using Random
 using LinearAlgebra
-
+include("symprod.jl")
 trandn(rn::AbstractRNG, v::NTuple{N,T}) where {N,T} = ntuple(i->randn(rn,T),Val(N))
 function tsqnorm(v::NTuple{N,T}) where {N,T}
     s=zero(T)
@@ -71,27 +71,39 @@ function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
     d=length(μ)
     n=4+floor(Int,3*log(d))
     Z=[Array{T}(undef,d) for i in 1:n]
-    σ=abs(det(A))^(1/d)
+    SZ=SymProd.(Z)
+    σ=T(abs(det(A))^(1/d))
     F=fill(f(μ),n)
     B=A./σ
     idx=collect(1:n)
     u=@. max(0,log(n/2+1)-log(idx))
-    u=u./sum(u) .- 1/n
+    norm_u=sum(u)
+    @. u=T(u/norm_u - 1/n)
     ημ=one(T)
-    ησ=ηB=3/5*(3+log(d))/(d*√d)
-    while σ>1e-5
+    ησ=ηB=T(3/5*(3+log(d))/(d*√d))
+    Gδ=zeros(T,d)
+    GM=zeros(T,d,d)
+    GB=zeros(T,d,d)
+    Id=one(T)*I(d)
+    while σ>1e-8d
         for i in 1:n
             randn!(Z[i])
             F[i]=f(μ .+ σ.*B*Z[i])
         end
         sort!(idx,by=i->F[i])
-        Gδ=sum(u[i].*Z[idx[i]] for i in 1:n)
-        GM=sum(u[i].*(Z[idx[i]]*(Z[idx[i]]')-I) for i in 1:n)
+        @. begin
+            Gδ=u[1]*Z[idx[1]]
+            GM=u[1]*(SZ[idx[1]]-Id)
+            for i in 2:n
+                Gδ+=u[i]*Z[idx[i]]
+                GM+=u[i]*(SZ[idx[i]]-Id)
+            end
+        end
         Gσ=tr(GM)/d
-        GB=GM-Gσ*I
-        μ=μ.+ημ*σ*B*Gδ
+        GM .-= Gσ*Id
+        μ.+=ημ*σ*B*Gδ
         σ=σ*exp(ησ/2*Gσ)
-        B=B*exp(ηB/2 .* GB)
+        B.=B*exp(ηB/2 .* GM)
     end
     return (sol=μ, cost=f(μ))
 end
