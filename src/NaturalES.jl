@@ -79,19 +79,29 @@ function xnes(f,μ::AbstractVector{T},A::AbstractMatrix{T}) where T
     u=u./sum(u) .- 1/n
     ημ=one(T)
     ησ=ηB=3/5*(3+log(d))/(d*√d)
+    Gδ=zeros(T,d)
+    GM=zeros(T,d,d)
+    GB=zeros(T,d,d)
     while σ>1e-5
         for i in 1:n
             randn!(Z[i])
             F[i]=f(μ .+ σ.*B*Z[i])
         end
         sort!(idx,by=i->F[i])
-        Gδ=sum(u[i].*Z[idx[i]] for i in 1:n)
-        GM=sum(u[i].*(Z[idx[i]]*(Z[idx[i]]')-I) for i in 1:n)
+        Gδ.=u[1].*Z[idx[1]]
+        GM.=u[1].*(Z[idx[1]]*(Z[idx[1]]')-I)
+        for i in 2:n
+            z=Z[idx[i]]
+            Gδ.+=u[i].*z
+            GM.+=u[i].*(z*(z')-I)
+        end
         Gσ=tr(GM)/d
-        GB=GM-Gσ*I
-        μ=μ.+ημ*σ*B*Gδ
+        for i in 1:d
+            GM[i]-=Gσ
+        end
+        μ.+=ημ*σ*B*Gδ
         σ=σ*exp(ησ/2*Gσ)
-        B=B*exp(ηB/2 .* GB)
+        B.*=exp(ηB/2 .* GM)
     end
     return (sol=μ, cost=f(μ))
 end
