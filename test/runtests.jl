@@ -2,9 +2,11 @@ using NaturalES
 using Test
 using LinearAlgebra
 
+const frng=MersenneTwister(123)
+
 f(x) = sum(cosh.(x.-(1:length(x)))) - length(x)
 
-g(P) = sum(0<rand()<p<=1 ? 1 : 5+p^2 for p in P)
+g(P) = sum(0<rand(frng)<p<=1 ? 1 : 5+p^2 for p in P)
 
 function rosenbrock2d(x)
   return (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
