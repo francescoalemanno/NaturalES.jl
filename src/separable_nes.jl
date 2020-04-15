@@ -5,7 +5,7 @@ struct sNES{T}
     samples::Int
     function sNES{T}(d::Integer;P...) where T
         ημ=T(1)
-        ησ=T(3/5*(3+log(d))/(d*√d))
+        ησ=T( (3+log(d))/(5*√d) )
         samples=4 + ceil(Int, log(3*d))
         σtol=T(1e-8)
         haskey(P,:ημ) && (ημ=P[:ημ])
@@ -42,7 +42,7 @@ function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNE
         F[i] = f(tmp_x)
     end
     sort!(idx,by=i->F[i])
-    while sum(σ) > σtol
+    while geo_mean(σ) > σtol
         for i in 1:samples
             j=idx[i]
             if i>=(samples÷2)

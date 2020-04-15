@@ -20,3 +20,15 @@ end
 function randchisq(::Type{T},ν::Integer) where T
     randchisq(Random.default_rng(),T,ν)
 end
+
+function geo_mean(x::AbstractVector{T}) where T
+    gm=one(T)
+    ds=0
+    for e in x
+        e<=0 && continue
+        ds+=1
+        gm*=e
+    end
+    ds==0 && return zero(T)
+    gm^(1/ds)
+end

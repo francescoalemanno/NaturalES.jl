@@ -6,7 +6,7 @@ struct xNES{T}
     samples::Int
     function xNES{T}(d::Integer;P...) where T
         ημ=T(1)
-        ηB=ησ=T(3/5*(3+log(d))/(d*√d))
+        ηB=ησ=T( (9+3*log(d))/(5*d*√d) )
         samples=4 + ceil(Int, log(3*d))
         σtol=T(1e-8)
         haskey(P,:ημ) && (ημ=P[:ημ])
