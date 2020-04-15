@@ -1,7 +1,7 @@
 using NaturalES
 using Test
 using LinearAlgebra
-
+using Random
 const frng=MersenneTwister(123)
 
 f(x) = sum(cosh.(x.-(1:length(x)))) - length(x)
