@@ -8,10 +8,10 @@ f(x) = sum(cosh.(x.-(1:length(x)))) - length(x)
 
 g(P) = sum(0<rand(frng)<p<=1 ? 1 : 5+p^2 for p in P)
 
-function rosenbrock2d(x)
-    s=(1.0 - x[1])^2
-    for i in 2:length(x)
-        s+=100.0 * (x[i] - x[i-1]^2)^2
+function rosenbrock2d(x::AbstractVector{T}) where T
+    s=(1.0- x[1])^2
+    for i in 1:(length(x)-1)
+        s+=100.0 * (x[i+1] - x[i]^2)^2
     end
     return s
 end
