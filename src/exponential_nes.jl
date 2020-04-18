@@ -37,38 +37,54 @@ function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::x
     u=utility_function{T}(n)
     Gδ=zeros(T,d)
     GM=zeros(T,d,d)
-    while σ>σtol
+    tmp_μ=copy(μ)
+    @inbounds while σ>σtol
         randn!(Z)
         for i in 1:n
-            F[i]=f(μ .+ σ .* B * Z[:,i])
+            #F[i] = f(μ .+ σ .* B * Z[:,i])
+            mul!(tmp_μ,B,view(Z,:,i))
+            tmp_μ .= μ .+ tmp_μ .* σ
+            F[i] = f(tmp_μ)
         end
-        sort!(idx,by=i->F[i])
+        sortperm!(idx,F)
         #Gδ=sum(u[i] .* Z[:,idx[i]] for i in 1:n)
         #GM=sum(u[i] .* (Z[:,idx[i]] * (Z[:,idx[i]]') - I) for i in 1:n)
-        Gδ.=0
-        GM.=0
-        for i in 1:n
-            j=idx[i]
-            for k in 1:d
-                Gδ[k]+=u[i] * Z[k,j]
-            end
-            for k1 in 1:d, k2 in 1:d
-                GM[k1,k2]+=u[i] * (Z[k1,j] * Z[k2,j] - δ(T,k1,k2))
+        let i=1
+            j = idx[i]
+            for k2 in 1:d
+                Gδ[k2] = u[i] * Z[k2,j]
+                for k1 in 1:d
+                    GM[k1,k2] = u[i] * (Z[k1,j] * Z[k2,j] - δ(T,k1,k2))
+                end
             end
         end
-        Gσ=tr(GM) / d
+        for i in 2:n
+            j = idx[i]
+            for k2 in 1:d
+                Gδ[k2] += u[i] * Z[k2,j]
+                for k1 in 1:d
+                    GM[k1,k2] += u[i] * (Z[k1,j] * Z[k2,j] - δ(T,k1,k2))
+                end
+            end
+        end
         #=
+        Gσ = tr(GM) / d
         GB=GM - Gσ * I
         μ=μ .+ ημ * σ *B *Gδ
         σ=σ * exp(ησ/2 * Gσ)
-        B=B * exp(ηB/2 .* GB)=#
-        Gσ=tr(GM) / d
+        B=B * exp(ηB/2 .* GB)
+        =#
+        Gσ = tr(GM) / d
         for i in 1:d
             GM[i,i]-=Gσ
         end
-        μ=μ .+ ημ * σ *B *Gδ
-        σ=σ * exp(ησ/2 * Gσ)
-        B=B * exp(ηB/2 .* GM)
+        GM .*= ηB/2
+        Gσ *= ησ/2
+        mul!(tmp_μ,B,Gδ)
+        μ .+= ημ .* σ .* tmp_μ
+        σ *= exp(Gσ)
+        mul!(GM,B,exp(GM))
+        B.=GM
     end
     return (sol=μ, cost=f(μ))
 end
