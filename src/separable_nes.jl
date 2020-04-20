@@ -1,4 +1,4 @@
-struct sNES{T}
+mutable struct sNES{T}
     ημ::T
     ησ::T
     σtol::T
@@ -8,11 +8,11 @@ struct sNES{T}
         ησ=T( (3+log(d))/(5*√d) )
         samples=4 + ceil(Int, log(3*d))
         σtol=T(1e-8)
-        haskey(P,:ημ) && (ημ=P[:ημ])
-        haskey(P,:ησ) && (ησ=P[:ησ])
-        haskey(P,:samples) && (samples=P[:samples])
-        haskey(P,:σtol) && (σtol=P[:σtol])
-        new{T}(ημ,ησ,σtol,samples)
+        S=new{T}(ημ,ησ,σtol,samples)
+        for k in keys(P)
+            setfield!(S,k,P[k])
+        end
+        S
     end
 end
 

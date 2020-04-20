@@ -1,4 +1,4 @@
-struct xNES{T}
+mutable struct xNES{T}
     ημ::T
     ησ::T
     ηB::T
@@ -9,18 +9,18 @@ struct xNES{T}
         ηB=ησ=T( (9+3*log(d))/(5*d*√d) )
         samples=4 + ceil(Int, log(3*d))
         σtol=T(1e-8)
-        haskey(P,:ημ) && (ημ=P[:ημ])
-        haskey(P,:ησ) && (ησ=P[:ησ])
-        haskey(P,:ηB) && (ησ=P[:ηB])
-        haskey(P,:samples) && (samples=P[:samples])
-        haskey(P,:σtol) && (σtol=P[:σtol])
-        new{T}(ημ,ησ,ηB,σtol,samples)
+        S=new{T}(ημ,ησ,ηB,σtol,samples)
+        for k in keys(P)
+            setfield!(S,k,P[k])
+        end
+        S
     end
 end
 
 function δ(T,i,j)
     ifelse(i==j,one(T),zero(T))
 end
+
 function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::xNES{T}) where T
     n=params.samples
     ημ=params.ημ
