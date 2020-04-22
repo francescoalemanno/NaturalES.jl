@@ -1,10 +1,10 @@
-mutable struct xNES{T}
+mutable struct xNES_state{T}
     ημ::T
     ησ::T
     ηB::T
     σtol::T
     samples::Int
-    function xNES{T}(d::Integer;P...) where T
+    function xNES_state{T}(d::Integer;P...) where T
         ημ=T(1)
         ηB=ησ=T( (9+3*log(d))/(5*d*√d) )
         samples=4 + ceil(Int, log(3*d))
@@ -13,15 +13,18 @@ mutable struct xNES{T}
         for k in keys(P)
             setfield!(S,k,P[k])
         end
+        S.ηB=S.ησ
         S
     end
 end
+
+struct xNES <: OptMethod end
 
 function δ(T,i,j)
     ifelse(i==j,one(T),zero(T))
 end
 
-function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::xNES{T}) where T
+function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::xNES_state{T}) where T
     n=params.samples
     ημ=params.ημ
     ησ=params.ησ
@@ -89,15 +92,17 @@ function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::x
     return (sol=μ, cost=f(μ))
 end
 
-function exponential_nes(f,μ::AbstractVector{T},σ::AbstractVector{T},params::xNES{T}) where T
+function exponential_nes(f,μ::AbstractVector{T},σ::AbstractVector{T},params::xNES_state{T}) where T
     A=diagm(σ)
     exponential_nes(f,μ,A,params)
 end
 
-function exponential_nes(f,μ::AbstractVector{T},σ::T,params::xNES{T}) where T
+function exponential_nes(f,μ::AbstractVector{T},σ::T,params::xNES_state{T}) where T
     exponential_nes(f,μ,fill(σ,length(μ)),params)
 end
 
 function exponential_nes(f,μ::AbstractVector{T},σ; P...) where T
-    exponential_nes(f,μ,σ,xNES{T}(length(μ);P...))
+    exponential_nes(f,μ,σ,xNES_state{T}(length(μ);P...))
 end
+
+pickmethod(::Type{xNES}) = exponential_nes

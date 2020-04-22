@@ -1,9 +1,9 @@
-mutable struct sNES{T}
+mutable struct sNES_state{T}
     ημ::T
     ησ::T
     σtol::T
     samples::Int
-    function sNES{T}(d::Integer;P...) where T
+    function sNES_state{T}(d::Integer;P...) where T
         ημ=T(1)
         ησ=T( (3+log(d))/(5*√d) )
         samples=4 + ceil(Int, log(3*d))
@@ -16,7 +16,9 @@ mutable struct sNES{T}
     end
 end
 
-function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNES{T}) where T
+struct sNES <: OptMethod end
+
+function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNES_state{T}) where T
     samples=params.samples
     samples>3 || error("atleast 3 samples are required for sNES to work.")
     ημ = params.ημ
@@ -66,10 +68,12 @@ function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNE
     (sol = x, cost = f(x))
 end
 
-function separable_nes(f,μ::AbstractVector{T},σ::T,params::sNES{T}) where T
+function separable_nes(f,μ::AbstractVector{T},σ::T,params::sNES_state{T}) where T
     separable_nes(f,μ,fill(σ,length(μ)),params)
 end
 
 function separable_nes(f,μ::AbstractVector{T},σ; P...) where T
-    separable_nes(f,μ,σ,sNES{T}(length(μ);P...))
+    separable_nes(f,μ,σ,sNES_state{T}(length(μ);P...))
 end
+
+pickmethod(::Type{sNES}) = separable_nes

@@ -1,13 +1,9 @@
 using NaturalES
 using Test
 using LinearAlgebra
-using Random
-const frng=MersenneTwister(123)
 
 f(x) = sum(cosh.(x.-(1:length(x)))) - length(x)
-
-g(P) = sum(0<rand(frng)<p<=1 ? 1 : 5+p^2 for p in P)
-
+sphere(x) = sum(abs2,x)
 function rosenbrock2d(x::AbstractVector{T}) where T
     s=(1.0 - x[1])^2
     for i in 1:(length(x)-1)
@@ -16,19 +12,12 @@ function rosenbrock2d(x::AbstractVector{T}) where T
     return s
 end
 
-@testset "sNES" begin
-    @test separable_nes(f,[0.0,0.0,0.0],1.0).cost < 1e-5
-    @test separable_nes(f,[4.0,4.0,4.0],1.0).cost < 1e-5
-    for N in 2:5
-        @test separable_nes(rosenbrock2d,zeros(N),1.0;ημ=1.0,ησ=0.0005).cost < 1e-5
+@testset "Optimizers" begin
+    for method in [sNES,xNES], x in [0.5,1.0,4.0], fun in [f,sphere,rosenbrock2d]
+        ix=[x,-x]
+        @info "method: $method, testing init condition $ix, function: $fun"
+        @test optimize(fun,ix,1.0,method).cost < 1e-7
+        @test optimize(fun,ix,1.0,method,samples=10).cost < 1e-7
+        @test optimize(fun,ix,2.0,method,ησ=0.01).cost < 1e-7
     end
-    for i in 1:10
-        s=separable_nes(g,[2.0,2.0,2.0],1.0,ημ=0.1,ησ=0.05,σtol=1e-3).sol
-        @test all(0.75 .< s .< 1)
-    end
-end
-
-@testset "xNES" begin
-    @test exponential_nes(f,[0.0,0.0],1.0).cost < 1e-5
-    @test exponential_nes(rosenbrock2d,[0.5,0.5],1.0).cost < 1e-5
 end
