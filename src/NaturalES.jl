@@ -21,10 +21,12 @@ minimizes the function `f` according to:
     `method` : xNES or sNES
         xNES = exponential evolution strategies, expensive but powerful on non separable objective
         sNES = separable evolution strategies, lightweight very powerful for separable or very high dimensional objectives
-    `options` : NamedTuple(ημ = learning rate for μ,
+    `options` :
+             ημ = learning rate for μ,
              ησ = learning rate for uncertainties,
-           σtol = tolerance on uncertainties,
-        samples = number of samples used to build Natural Gradient approximation)
+           atol = tolerance on uncertainties (default 1e-8),
+        samples = number of samples used to build Natural Gradient approximation,
+        iterations = upper limit on the number of iterations, default 10^4)
 
 """
 function optimize(f,μ,σ,method::Type{<:OptMethod}=sNES;options...)

@@ -1,19 +1,18 @@
 mutable struct xNES_state{T}
     ημ::T
     ησ::T
-    ηB::T
-    σtol::T
     samples::Int
+    termination::Termination{T}
     function xNES_state{T}(d::Integer;P...) where T
         ημ=T(1)
-        ηB=ησ=T( (9+3*log(d))/(5*d*√d) )
+        ησ=T( (9+3*log(d))/(5*d*√d) )
         samples=4 + ceil(Int, log(3*d))
-        σtol=T(1e-8)
-        S=new{T}(ημ,ησ,ηB,σtol,samples)
+        Term=Termination{T}()
+        S=new{T}(ημ,ησ,samples,Term)
         for k in keys(P)
-            setfield!(S,k,P[k])
+            hasfield(sNES_state{T},k) && setfield!(S,k,P[k])
+            hasfield(Termination{T},k) && setfield!(Term,k,P[k])
         end
-        S.ηB=S.ησ
         S
     end
 end
@@ -27,9 +26,7 @@ end
 function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::xNES_state{T}) where T
     n=params.samples
     ημ=params.ημ
-    ησ=params.ησ
-    ηB=params.ηB
-    σtol=params.σtol
+    ηB=ησ=params.ησ
     μ=copy(μ0)
     d=length(μ)
     Z=Array{T}(undef,d,n)
@@ -41,7 +38,8 @@ function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::x
     Gδ=zeros(T,d)
     GM=zeros(T,d,d)
     tmp_μ=copy(μ)
-    @inbounds while σ>σtol
+    iterations=0
+    @inbounds while !termination_criteria(params.termination,σ,iterations)
         randn!(Z)
         for i in 1:n
             #F[i] = f(μ .+ σ .* B * Z[:,i])
@@ -88,6 +86,7 @@ function exponential_nes(f,μ0::AbstractVector{T},A::AbstractMatrix{T},params::x
         σ *= exp(Gσ)
         mul!(GM,B,exp(GM))
         B.=GM
+        iterations+=1
     end
     return (sol=μ, cost=f(μ))
 end

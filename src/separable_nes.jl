@@ -1,16 +1,17 @@
 mutable struct sNES_state{T}
     ημ::T
     ησ::T
-    σtol::T
     samples::Int
+    termination::Termination{T}
     function sNES_state{T}(d::Integer;P...) where T
         ημ=T(1)
         ησ=T( (3+log(d))/(5*√d) )
         samples=4 + ceil(Int, log(3*d))
-        σtol=T(1e-8)
-        S=new{T}(ημ,ησ,σtol,samples)
+        Term=Termination{T}()
+        S=new{T}(ημ,ησ,samples,Term)
         for k in keys(P)
-            setfield!(S,k,P[k])
+            hasfield(sNES_state{T},k) && setfield!(S,k,P[k])
+            hasfield(Termination{T},k) && setfield!(Term,k,P[k])
         end
         S
     end
@@ -23,7 +24,6 @@ function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNE
     samples>3 || error("atleast 3 samples are required for sNES to work.")
     ημ = params.ημ
     ησ = params.ησ
-    σtol = params.σtol
     N=length(x0)
     length(σ) == N || error("the length of 'σ' must be equal to the length of 'x'.")
     x = copy(x0)
@@ -42,7 +42,8 @@ function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNE
         F[i] = f(tmp_x)
     end
     sortperm!(idx,F)
-    while geo_mean(σ) > σtol
+    iterations=0
+    while !termination_criteria(params.termination,geo_mean(σ),iterations)
         for i in 1:samples
             j = idx[i]
             if i >= (samples ÷ 2)
@@ -64,6 +65,7 @@ function separable_nes(f,x0::AbstractVector{T},σ::AbstractVector{T},params::sNE
         end
         x .+= ημ .* σ .* ∇f
         σ .*= exp.(ησ ./ 2 .* ∇fσ)
+        iterations+=1
     end
     (sol = x, cost = f(x))
 end

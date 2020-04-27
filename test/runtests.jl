@@ -18,6 +18,7 @@ end
         @info "method: $method, testing init condition $ix, function: $fun"
         @test optimize(fun,ix,1.0,method).cost < 1e-7
         @test optimize(fun,ix,1.0,method,samples=10).cost < 1e-7
-        @test optimize(fun,ix,2.0,method,ησ=0.01).cost < 1e-7
+        @test optimize(fun,ix,2.0,method,ησ=0.01,atol=1e-8,iterations=10^4).cost < 1e-7
+        @test optimize(fun,ix,2.0,method,ησ=0.01,atol=1e-8,iterations=10).cost > 1e-7
     end
 end

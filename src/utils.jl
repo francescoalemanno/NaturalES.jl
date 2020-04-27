@@ -32,3 +32,14 @@ function geo_mean(x::AbstractVector{T}) where T
     ds==0 && return zero(T)
     gm^(1/ds)
 end
+
+Base.@kwdef mutable struct Termination{T}
+    atol::T=T(1e-8)
+    iterations::Int=1e4
+end
+
+function termination_criteria(C::Termination,atol,iterations)
+    atol <= C.atol && return true
+    iterations >= C.iterations && return true
+    return false
+end
